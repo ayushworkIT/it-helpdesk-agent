@@ -1,0 +1,20 @@
+# ==== Secrets: NEVER commit these ====
+.env
+.env.*
+!.env.example
+
+# ==== Python build/cache files ====
+__pycache__/
+*.py[cod]
+
+# ==== Virtual environments (in case one is ever created here) ====
+.venv/
+venv/
+
+# ==== Editor & OS files ====
+.vscode/
+Thumbs.db
+desktop.ini
+
+# ==== Chainlit runtime files (uploaded files) ====
+.files/
