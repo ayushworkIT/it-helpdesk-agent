@@ -1,6 +1,13 @@
-# RakFort IT Help Desk Agent - Phase 1 dependencies (pinned)
+# RakFort IT Help Desk Agent - dependencies (pinned)
+
+# Phase 1 - agent, UI, config
 langchain==1.4.7
 langchain-openai==1.7.3
 langgraph==1.2.18
 chainlit==2.12.0
 python-dotenv==1.2.4
+
+# Phase 2 - RAG (chunking + vector database)
+langchain-text-splitters==1.1.3
+langchain-chroma==1.1.0
+chromadb==1.5.9
