@@ -21,3 +21,11 @@ desktop.ini
 
 # ==== Vector database (rebuilt by running ingest.py) ====
 chroma_db/
+
+
+# ==== Local ticket data (may contain personal details) ====
+data/
+
+
+# ==== Local ticket data (may contain personal details) ====
+data/
