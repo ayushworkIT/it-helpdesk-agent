@@ -1,4 +1,4 @@
-"""
+﻿"""
 Phase 3 - RakFort IT Help Desk MCP server.
 Exposes IT help desk tools over the Model Context Protocol (stdio transport).
 
@@ -14,7 +14,7 @@ from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 
-mcp = FastMCP("RakFort IT Help Desk")
+mcp = FastMCP("RakFort IT Help Desk", host="127.0.0.1", port=int(os.getenv("MCP_PORT", "8003")))
 
 # ---------- Simulated data ----------
 SERVICE_STATUS = {
@@ -172,4 +172,5 @@ def service_catalogue() -> str:
     )
 
 if __name__ == "__main__":
-    mcp.run(transport="stdio")
+    mcp.run(transport=os.getenv("MCP_TRANSPORT", "sse"))
+

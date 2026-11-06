@@ -1,23 +1,20 @@
-"""
+﻿"""
 Steps 3.3 & 3.5 - Test the MCP server through the real protocol:
 discover tools, call one, and read a resource.
 """
 import asyncio
-import sys
-from pathlib import Path
 
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
-SERVER_PATH = Path(__file__).parent / "helpdesk_server.py"
+MCP_URL = "http://127.0.0.1:8003/sse"   # server must already be running: python helpdesk_server.py
 
 
 async def main():
     client = MultiServerMCPClient(
         {
             "helpdesk": {
-                "command": sys.executable,        # the venv's Python, not "python"
-                "args": [str(SERVER_PATH)],
-                "transport": "stdio",
+                "url": MCP_URL,
+                "transport": "sse",
             }
         }
     )
@@ -39,3 +36,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+

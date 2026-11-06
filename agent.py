@@ -1,4 +1,4 @@
-"""
+﻿"""
 Phase 3 - RakFort IT Help Desk agent: RAG + MCP tools, built as a LangGraph graph.
 
 Graph:  START -> retrieve -> assistant --(safe tools)--------------> tools -> assistant
@@ -9,8 +9,6 @@ Graph:  START -> retrieve -> assistant --(safe tools)--------------> tools -> as
 import asyncio
 import os
 import re
-import sys
-from pathlib import Path
 from typing import Literal
 
 from dotenv import load_dotenv
@@ -30,13 +28,12 @@ llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL", "gpt-5.4-mini"))
 vector_store = get_vector_store()
 TOP_K = 3
 
-# How to start our MCP server (stdio): the venv's Python running helpdesk_server.py
-SERVER_PATH = Path(__file__).parent / "helpdesk_server.py"
+# Where to reach our MCP server (SSE). It runs separately: python helpdesk_server.py
+MCP_URL = os.getenv("MCP_URL", "http://127.0.0.1:8003/sse")
 MCP_SERVERS = {
     "helpdesk": {
-        "command": sys.executable,
-        "args": [str(SERVER_PATH)],
-        "transport": "stdio",
+        "url": MCP_URL,
+        "transport": "sse",
     }
 }
 
@@ -228,7 +225,7 @@ async def build_graph():
     builder.add_node("retrieve", retrieve)
     builder.add_node("assistant", assistant)
     builder.add_node("approve", approve)
-    builder.add_node("tools", ToolNode(tools))
+    builder.add_node("tools", ToolNode(tools, handle_tool_errors="The help desk tools are temporarily unavailable. Nothing was checked or created. Tell the user to try again in a few minutes or contact the Service Desk on extension 4357."))
 
     builder.add_edge(START, "retrieve")
     builder.add_edge("retrieve", "assistant")
@@ -280,3 +277,5 @@ async def chat():
 
 if __name__ == "__main__":
     asyncio.run(chat())
+
+

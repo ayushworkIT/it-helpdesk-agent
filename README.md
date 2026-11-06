@@ -1,4 +1,4 @@
-# RakFort IT Help Desk Agent
+﻿# RakFort IT Help Desk Agent
 
 An AI-powered IT help desk agent built with **LangChain**, **LangGraph**, **Chainlit** and the
 **Model Context Protocol (MCP)**. It answers staff IT questions from a company knowledge base (RAG)
@@ -26,7 +26,7 @@ agent.py (LangGraph)
                           +--(create_ticket)--> approve --(yes)-+
                                                    +--(no)---> assistant
    retrieve: query rewriting + Chroma vector search (knowledge_base/)
-   tools:    MCP client (langchain-mcp-adapters), stdio transport
+   tools:    MCP client (langchain-mcp-adapters), SSE transport (http://127.0.0.1:8003/sse)
    v
 helpdesk_server.py (MCP server, FastMCP)
    tools:    check_service_status, check_connectivity, get_system_info,
@@ -62,7 +62,7 @@ helpdesk_server.py (MCP server, FastMCP)
 ```powershell
 chainlit run app.py -w
 ```
-Open http://localhost:8000. The app starts the MCP server automatically (stdio).
+Start the MCP server first, in its own terminal: python helpdesk_server.py (SSE on 127.0.0.1:8003). Then run Chainlit and open http://localhost:8000.
 
 ## Key design decisions
 
@@ -115,11 +115,26 @@ path traversal (4/4 blocked), poisoned-document injection, API failure handling:
 ## Known limitations
 
 - Conversation memory and the graph's paused state are in RAM - lost when the app restarts.
-- stdio transport starts a server session per tool call (adds latency); production would use
-  a long-running HTTP MCP server with authentication.
+- The MCP server has no authentication; it is safe only while bound to 127.0.0.1. Production would add authentication and use Streamable HTTP.
 - Service status and connectivity data are simulated.
 - Prompt rules are followed probabilistically (e.g. citation format, the "general advice" label,
   the model sometimes also asking for confirmation itself). Security-critical controls are in code.
 - Password redaction uses a pattern ("password is X", "pwd: X") and will not catch every phrasing.
 - A rejected tool call is still labelled "Used create_ticket" in the UI (its output shows it was rejected).
 - Chainlit UI quirk: switching source links while the side panel is open can show the previous document.
+## Follow-up: MCP transport moved from stdio to SSE
+
+The MCP server now runs as its own service over **SSE** on `127.0.0.1:8003`, instead of being started by the agent over stdio.
+
+| | Before (stdio) | After (SSE) |
+|---|---|---|
+| Server start | Spawned by the agent for each call | Started separately: `python helpdesk_server.py` |
+| Agent config | `command` + `args` | `url` (`MCP_URL`, default `http://127.0.0.1:8003/sse`) |
+| Network exposure | None (child process) | Loopback only (`netstat`: `127.0.0.1:8003`) |
+
+- **Configurable transport:** the server reads `MCP_TRANSPORT` (`sse` default, `streamable-http` or `stdio`) and `MCP_PORT`.
+- **SSE is deprecated** in the MCP specification in favour of Streamable HTTP. Switching needs `MCP_TRANSPORT=streamable-http` on the server and `transport: "http"` with a URL ending in `/mcp` on the client.
+- **Regression tested:** tool calls, RAG with clickable sources, human approval (reject and approve), password redaction - all unchanged.
+- **New failure mode found and fixed:** if the server went down, a failed tool call left the chat permanently broken (the OpenAI API rejects a tool request with no matching result). `ToolNode(handle_tool_errors=...)` now returns a fixed, safe message as the tool result, so the agent explains the outage without leaking internal details, and the same chat recovers once the server is back.
+
+
